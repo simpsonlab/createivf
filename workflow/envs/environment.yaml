@@ -1,0 +1,13 @@
+---
+name: createivf
+channels:
+    - conda-forge
+    - bioconda
+    - defaults
+dependencies:
+    - python=3.9
+    - snakemake
+    - minimap2
+    - pysam
+    - samtools
+
