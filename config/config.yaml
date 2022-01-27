@@ -1,2 +1,7 @@
 ---
-
+run_name: "run_name"
+run_root: "/path/to/ont/runs"
+index_pattern: "{run_root}/{run_name}/fast5/{index}"
+analysis_root: "/path/to/analysis/root/directory"
+sample: "samplename"
+reference: "/path/to/reference/genome.fa"
