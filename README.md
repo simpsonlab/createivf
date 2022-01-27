@@ -46,10 +46,29 @@ The basecaller uses `guppy` and a GPU to convert FAST5 files to FASTQ files.
 snakemake -s /path/to/createivf/workflow/Snakefile --cores 1 all_basecall
 ```
 
-Once basecalling has completed, the remainder of the pipeline can
-be executed on a standard server:
+### Run alignment
+Alignment of the pipeline utilizes `minimap2` and post-processes the output
+BAM file using `samtools`.  Note that alignment occurs for individual runs
+(i.e. run_name) defined in the `config.yaml` file.
+```
+snakemake -s /path/to/createivf/workflow/Snakefile --cores 8 all_map
+```
+In addition to creating the BAM file for a sample in a given run, read
+statistics are generated (`sample/basecalling/<run>_read_stats.tsv`) from
+the merged FASTQ file.
+
+### Run breakpoint calling
+
+Once basecalling has completed, breakpoint calling can be run:
 ```
 snakemake -s /path/to/createivf/workflow/Snakefile --cores 8 all_breakpoint
+```
+This will merge each run BAM file for a given sample into a single sample
+BAM file and breakpoint read information:
+```
+sample/merged.sorted.bam
+sample/bp1.reads
+sample/bp2.reads
 ```
 
 ## Credits and Acknowledgements
