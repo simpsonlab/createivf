@@ -1,57 +1,58 @@
-
-configfile: "config.yaml"
-
+import sys
 import os
-
-#
-# helper functions
-#
-def get_fastq_file():
-    """
-    Return the full path to the FASTQ file to process
-    """
-    pass
-
-def get_reference_fasta():
-    """
-    Return the reference genome from the config.yaml file
-    """
-    return config.get('reference', '')
-
-
-def get_minimap():
-    """
-    Return the aligner to use
-    """
-    return config['aligner']
-
-
-def get_align_threads():
-    """
-    Return the number of threads to use (default: 8)
-    """
-    return config.get('aligner_threads', '8')
-
-def get_minimap_preset():
-    """
-    Return the presets used by the aligner.
-    """
-    return config.get('minimap_preset', 'map-ont') 
-
+import glob
 
 #
 # rules
 #
-rule minimap2_align:
-# $MINIMAP2_ROOT/bin/minimap2 -t 8 -ax map-ont /.mounts/labs/gsi/modulator/sw/data/hg38-p12/hg38_random.fa $IN | samtools sort -T $OUT.tmp -o $OUT -
+rule merge_index_fastq_files:
     input:
-        fastq=get_fastq_file,
-        reference=get_reference_fasta
+        get_index_fastq
     output:
-        sam=get_mapped_sam
+        expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
     params:
-        program=get_minimap,
-        threads=get_align_threads,
-        preset=get_minimap_preset 
+        program="cat"
     shell:
-        "{params.program} -t {params.threads} -a -x {params.preset} {input.reference} {input.fastq}"
+        "{params.program} {input} > {output}"
+
+rule map_sample_run_fastq_file:
+    input:
+        fastq_files=expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name']),
+        ref=get_reference
+    output:
+        expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample'])
+    params:
+        aligner="minimap2",
+        postprocess="samtools sort"
+    shell:
+        "{params.aligner} -t 8 -ax map-ont {input.ref} {input.fastq_files} | {params.postprocess} -T {output}.tmp -o {output} -"
+
+rule index_mapped_bam:
+    input:
+        expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample'])
+    output:
+        expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam.bai", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample'])
+    params:
+        program="samtools index"
+    shell:
+        "{params.program} {input}"
+
+rule merge_run_sample_bam_files:
+    input:
+        get_sample_run_bam_files        
+    output:
+        expand("{analysis_root}/{sample}/merged.sorted.bam", analysis_root=config['analysis_root'], sample=config['sample'])
+    params:
+        program='samtools merge'
+    shell:
+        "{params.program} {output} {input}"
+
+rule index_merged_bam_file:
+    input:
+        get_merged_sample_bam_file
+    output:
+        expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample'])
+    params:
+        program="samtools index"
+    shell:
+        "{params.program} {input}"

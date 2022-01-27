@@ -22,6 +22,11 @@ the conda environment:
 conda activate createivf
 ```
 
+Basecalling is performed with `guppy`.  A Nvidia GPU is required
+on the server to speed up the process of generating FASTQ files
+using the CUDA set of libraries.
+
+
 ## Usage
 ### Configuration
 To configure the pipeline, a `config.yaml` file needs to be created with
@@ -48,7 +53,10 @@ snakemake -s /path/to/createivf/workflow/Snakefile --cores 8 all_breakpoint
 ```
 
 ## Credits and Acknowledgements
-
+The script (`abyss-fac.pl`) to generate read stats was obtained from:
+```
+https://github.com/bcgsc/abyss/blob/master/bin/abyss-fac.pl
+```
 
 
 ## License

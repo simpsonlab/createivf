@@ -1,18 +1,31 @@
-include: "rules/createivf.smk"
+include: "rules/common.smk"
+include: "rules/basecall.smk"
+include: "rules/align.smk"
+include: "rules/stats.smk"
+include: "rules/breakpoint.smk"
+
+rule all:
+    input:
+        get_basecall_output,
+        expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample']),
+        expand("{analysis_root}/{sample}/basecalling/{run_name}_read_stats.tsv", analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name']),
+        get_breakpoint_reads
 
 rule all_basecall:
     input: get_basecall_output
 
 rule all_map:
     input:
-        expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam.bai", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample'])
+        expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam.bai", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample']),
+        expand("{analysis_root}/{sample}/basecalling/{run_name}_read_stats.tsv", analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
 
 rule all_merge:
     input:
         expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample'])
 
-rule all_bp:
+rule all_breakpoint:
     input:
+        expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample']),
         get_breakpoint_reads
 
 rule all_stats:
