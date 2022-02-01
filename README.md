@@ -85,6 +85,13 @@ BAM file and run breakpoint detection on the merged file:
 ```
 snakemake -s /path/to/createivf/workflow/Snakefile --cores 8 all_breakpoint
 ```
+This will merge each run BAM file for a given sample into a single sample
+BAM file and breakpoint read information:
+```
+sample/merged.sorted.bam
+sample/bp1.reads
+sample/bp2.reads
+```
 
 
 ## Credits and Acknowledgements
