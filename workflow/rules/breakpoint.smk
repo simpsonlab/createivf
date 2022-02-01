@@ -7,12 +7,14 @@ import glob
 #
 rule get_breakpoints:
     input:
-        expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample'])
+        bam=expand("{analysis_root}/{sample}/merged.sorted.bam", analysis_root=config['analysis_root'], sample=config['sample'])
     output:
         "{sample}/bp{bp_id}.reads"
     params:
         sample=config['sample'],
-        program=srcdir('../scripts/get_breakpoint_for_sample.sh')
+        program=srcdir('../scripts/createivf_breakpoints.py'),
+        cytobands=get_cytobands,
+        metadata=get_metadata
     shell:
-        "bash {params.program} {params.sample}"
+        "python {params.program} --sample {params.sample} --metadata {params.metadata} --cytobands {params.cytobands} --bam {input.bam} --outprefix '{params.sample}/bp'"
 
