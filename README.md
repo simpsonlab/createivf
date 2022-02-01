@@ -99,7 +99,7 @@ The script (`abyss-fac.pl`) to generate read stats was obtained from:
 ```
 https://github.com/bcgsc/abyss/blob/master/bin/abyss-fac.pl
 ```
-
+The cytogenetic band file was obtained from [UCSC](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBand.txt.gz).  A column was appended to the file that prefixed the band with `chr`.
 
 ## License
 MIT
