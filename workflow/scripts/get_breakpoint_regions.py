@@ -52,5 +52,5 @@ chrom = bp_chr[0]
 start = bp_coords[0]
 end = bp_coords[-1]
 
-print "%s:%d-%d" % (chrom, start, end)
+print("%s:%d-%d" % (chrom, start, end))
 
