@@ -7,6 +7,42 @@ configfile: "config.yaml"
 #
 # helper functions
 #
+def get_basecaller(wildcards):
+    """
+    Return the guppy_basecaller path
+    """
+    return config.get("basecaller", "guppy_basecaller")
+
+def get_guppy_config(wildcards):
+    """
+    Return the MinION config
+    """
+    return config.get("guppy_config", "dna_r9.4.1_450bps_hac.cfg")
+
+def get_guppy_num_callers(wildcards):
+    """
+    Return the number of callers
+    """
+    return config.get("num_callers", "8")
+
+def get_gpu_runner_per_device(wildcards):
+    """
+    Return the number of GPU runners for each device
+    """
+    return config.get("gpu_runner_per_device", "4")
+
+def get_chunks_per_runner(wildcards):
+    """
+    Return the number of chunks per runner
+    """
+    return config.get("chunks_per_runner", "512")
+
+def get_gpu_device(wildcards):
+    """
+    Return the GPU device
+    """
+    return config.get("device", "'cuda:0 cuda:1'")
+
 def get_dir_index_pattern():
     """
     Return the index directory pattern
@@ -103,3 +139,14 @@ def get_breakpoint_reads(wildcards):
         bp_files.append('/'.join([config['sample'], bp_fn]))
     return bp_files
 
+def get_metadata(wildcards):
+    """
+    Return the metadata file from the config.yaml
+    """
+    return config['metadata']
+
+def get_cytobands(wildcards):
+    """
+    Return the cytobands file from the config.yaml
+    """
+    return config['cytobands']
