@@ -23,9 +23,11 @@ rule map_sample_run_fastq_file:
         expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample'])
     params:
         aligner="minimap2",
-        postprocess="samtools sort"
+        postprocess="samtools sort",
+        threads=workflow.cores,
+        preset="map-ont"
     shell:
-        "{params.aligner} -t 8 -ax map-ont {input.ref} {input.fastq_files} | {params.postprocess} -T {output}.tmp -o {output} -"
+        "{params.aligner} -t {params.threads} -ax {params.preset} {input.ref} {input.fastq_files} | {params.postprocess} -T {output}.tmp -o {output} -"
 
 rule index_mapped_bam:
     input:
