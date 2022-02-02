@@ -66,6 +66,11 @@ There are two required files for running breakpoint analysis:
 * `metadata` which is a tab separated file containing `sample`, band for `region1` and band for `region2`
 * `cytobands` which contains the genomic regions and their corresponding cytogenetic bands
 
+The cytobands file that is downloaded from the UCSC site requires an
+additional column to work with the analysis pipeline.  The script
+`workflow/scripts/fix_cytoband_file.py` can be used to append the
+additional column.
+
 ### Run the workflow
 The basecaller uses `guppy` and a GPU to convert FAST5 files to FASTQ files.
 ```
