@@ -7,7 +7,8 @@ import glob
 #
 rule get_breakpoints:
     input:
-        bam=expand("{analysis_root}/{sample}/merged.sorted.bam", analysis_root=config['analysis_root'], sample=config['sample'])
+        bam=expand("{analysis_root}/{sample}/merged.sorted.bam", analysis_root=config['analysis_root'], sample=config['sample']), 
+        bai=expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample'])
     output:
         "{sample}/bp{bp_id}.reads"
     params:
