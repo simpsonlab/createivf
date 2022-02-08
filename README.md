@@ -38,16 +38,16 @@ various parameters defined:
 ```
 run_name: "run_name"
 run_root: "/path/to/ont/runs"
-index_pattern: "{run_root}/{run_name}/fast5/{index}"
 analysis_root: "/path/to/analysis/root/directory"
 sample: "samplename"
-reference: "/path/to/reference/genome.fa"
+reference: "/path/to/reference/genome/fasta"
 basecaller: "guppy_basecaller"
 guppy_config: "dna_r9.4.1_450bps_hac.cfg"
 num_callers: "8"
 gpu_runner_per_device: "4"
 chunks_per_runner: "512"
 device: "'cuda:0 cuda:1'"
+fast5_dir: "/path/to/fast5/files"
 metadata: "/path/to/sample_cytogenetics.tsv"
 cytobands: "/path/to/hg38.cytoBand.composite.txt"
 ```

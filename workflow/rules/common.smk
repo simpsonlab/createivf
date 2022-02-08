@@ -9,7 +9,7 @@ configfile: "config.yaml"
 #
 def get_basecaller(wildcards):
     """
-    Return the guppy_basecaller path
+    Return the full path to the guppy_basecaller
     """
     return config.get("basecaller", "guppy_basecaller")
 
@@ -25,7 +25,7 @@ def get_guppy_num_callers(wildcards):
     """
     return config.get("num_callers", "8")
 
-def get_gpu_runner_per_device(wildcards):
+def get_gpu_runners_per_device(wildcards):
     """
     Return the number of GPU runners for each device
     """
@@ -57,26 +57,38 @@ def get_index_dir(wildcards):
     index_dir = index_pattern.format(run_root=config['run_root'], run_name=config['run_name'], index=wildcards.index)
     return index_dir
 
+def get_fast5_dir(wildcards):
+    """
+    Return the full path to the FAST5 directory for a run
+    from the config.yaml
+    """
+    return config['fast5_dir']
+
 def get_save_path_pattern():
     """
     Return basecall save path pattern
     """
-    return config.get('save_pattern', '{analysis_root}/{sample}/basecalling/{run_name}/{index}-basecalled')
+    #return config.get('save_pattern', '{analysis_root}/{sample}/basecalling/{run_name}/{index}-basecalled')
+    return config.get('save_pattern', '{analysis_root}/{sample}/basecalling/{run_name}')
 
 def get_save_path(wildcards):
     save_path_pattern = get_save_path_pattern()
-    save_path_dir = save_path_pattern.format(analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'], index=wildcards.index)
+    #save_path_dir = save_path_pattern.format(analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'], index=wildcards.index)
+    save_path_dir = save_path_pattern.format(analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
+    return save_path_dir
 
 def get_basecall_output(wildcards):
     """
     Return a list of indexed basecall output directories
     """
     basecall_dirs = list()
-    index_dirs_path = '/'.join([config['run_root'], config['run_name'], 'fast5', '*'])
-    for index_path in glob.glob(index_dirs_path):
-        index_dir = os.path.basename(index_path)
-        if os.path.isdir(index_path) and index_dir.isnumeric():
-            basecall_dirs.append('/'.join([config['analysis_root'], config['sample'], 'basecalling', config['run_name'], '-'.join([index_dir, 'basecalled'])])) 
+    for directory in ['fail', 'pass']:
+        basecall_dirs.append('/'.join([config['analysis_root'], config['sample'], 'basecalling', config['run_name'], directory]))
+#    index_dirs_path = '/'.join([config['run_root'], config['run_name'], 'fast5', '*'])
+#    for index_path in glob.glob(index_dirs_path):
+#        index_dir = os.path.basename(index_path)
+#        if os.path.isdir(index_path) and index_dir.isnumeric():
+#            basecall_dirs.append('/'.join([config['analysis_root'], config['sample'], 'basecalling', config['run_name'], '-'.join([index_dir, 'basecalled'])])) 
     return basecall_dirs
 
 def get_index_fastq_pattern(wildcards):
@@ -98,6 +110,14 @@ def get_index_fastq(wildcards):
                 if file.endswith('.fastq'):
                     index_fastq_files.append('/'.join([path, file]))
     return index_fastq_files
+
+def get_run_fastq_files(wildcards):
+    """
+    Return a list of basecalled FASTQ files from the basecalling
+    run directory
+    """
+    fastq_files = glob.glob('/'.join([config['analysis_root'], config['sample'], 'basecalling', config['run_name'], 'pass/*']))
+    return fastq_files
 
 def get_sample_fastq(wildcards):
     """
