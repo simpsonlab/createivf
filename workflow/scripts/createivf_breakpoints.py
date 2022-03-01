@@ -106,7 +106,7 @@ def import_cytoband(file, target, delimiter='\t'):
 
 def get_reads_in_region(bam, chrom, start, end, threshold=1000, quality=1):
     """
-    Print
+    Return the reads from a BAM file in a given region.
     """
     region_reads = list()
     bamfile = pysam.AlignmentFile(bam, 'rb')
@@ -134,11 +134,29 @@ def create_sorted_reads(reads):
     readids = list()
     read_list = list()
     for read in reads:
-        read_list.append([read.query_name,
-                          read.reference_name,
-                          str(read.reference_start),
-                          str(read.reference_end)])
+        if is_read_reverse(read=read):
+            read_list.append([read.query_name,
+                              read.reference_name,
+                              str(read.reference_start),
+                              str(read.reference_end),
+                              '-'])
+        else:
+            read_list.append([read.query_name,
+                              read.reference_name,
+                              str(read.reference_start),
+                              str(read.reference_end),
+                              '+'])
     return sorted(read_list, key=itemgetter(0))
+
+def is_read_reverse(read):
+    """
+    Return the orientation of the read from the SAM flag.
+    """
+    rev_strand_flag = 0x10
+    if read.flag & rev_strand_flag:
+        return True
+    else:
+        return False
 
 
 def get_intersecting_reads(reads1, reads2):
@@ -151,23 +169,36 @@ def get_intersecting_reads(reads1, reads2):
     intersecting_reads = list()
     for read1 in reads1:
         if read1.query_name not in read1_dict:
+            read1_strand = str()
+            if is_read_reverse(read1):
+                read1_strand = '-'
+            else:
+                read1_strand = '+'
             read1_dict.update({read1.query_name:
-                {'chrom': read1.reference_name,
-                 'start': str(read1.reference_start),
-                 'end': str(read1.reference_end)}})
+                {'chrom':  read1.reference_name,
+                 'start':  str(read1.reference_start),
+                 'end':    str(read1.reference_end),
+                 'strand': read1_strand}})
         else:
             continue
     for read2 in reads2:
+        read2_strand = str()
+        if is_read_reverse(read=read2):
+            read2_strand = '-'
+        else:
+            read2_strand = '+'
         if read2.query_name in read1_dict:
             tmp_read1 = ' '.join([
                 read1_dict[read2.query_name]['chrom'],
                 read1_dict[read2.query_name]['start'],
-                read1_dict[read2.query_name]['end']
+                read1_dict[read2.query_name]['end'],
+                read1_dict[read2.query_name]['strand']
                 ])
             tmp_read2 = ' '.join([
                 read2.reference_name,
                 str(read2.reference_start),
-                str(read2.reference_end)
+                str(read2.reference_end),
+                read2_strand
                 ])
             intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2])
     return intersecting_reads
@@ -177,7 +208,7 @@ def print_intersecting_reads(file, reads):
     """
     Print reads that intersect breakpoint 1 and 2 to a file
     """
-    with open(outfile, 'w') as ofh:
+    with open(file, 'w') as ofh:
         for read in reads:
             ofh.write('\t'.join(read))
             ofh.write('\n')
@@ -224,9 +255,8 @@ def main():
 
     print(f'Detecting intersecting breakpoint reads...')
     int_file = ''.join([args.outprefix, '.intersecting.reads'])
-    if len(int_reads) > 0:
-        print_intersecting_reads(file=int_file, reads=int_reads)
-    else:
+    print_intersecting_reads(file=int_file, reads=int_reads)
+    if len(int_reads) <= 0:
         print('No overlapping breakpoints detected...\n')
     print('Breakpoint detection complete!\n')
     
