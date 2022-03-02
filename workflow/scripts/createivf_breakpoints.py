@@ -258,7 +258,7 @@ def main():
     print_intersecting_reads(file=int_file, reads=int_reads)
     if len(int_reads) <= 0:
         print('No overlapping breakpoints detected...\n')
-    print('Breakpoint detection complete!\n')
+    print('\nBreakpoint detection complete!\n')
     
 
 if __name__ == '__main__':
