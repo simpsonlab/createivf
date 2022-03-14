@@ -146,7 +146,7 @@ def create_sorted_reads(reads):
                               str(read.reference_start),
                               str(read.reference_end),
                               '+'])
-    return sorted(read_list, key=itemgetter(0))
+    return sorted(read_list, key=itemgetter(0, 1, 2))
 
 def is_read_reverse(read):
     """
