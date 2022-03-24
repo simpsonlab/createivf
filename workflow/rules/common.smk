@@ -156,8 +156,15 @@ def get_breakpoint_reads(wildcards):
     bp_ids = ["1", "2"]
     for id in bp_ids:
         bp_fn = f"bp{id}.reads"
-        bp_files.append('/'.join([config['sample'], bp_fn]))
+        bp_files.append('/'.join([config['analysis_root'], config['sample'], bp_fn]))
     return bp_files
+
+def get_breakpoint_prefix(wildcards):
+    """
+    Return the prefix for the breakpoint files.
+    """
+    bp_prefix = '/'.join([config['analysis_root'], config['sample'], 'bp'])
+    return bp_prefix
 
 def get_metadata(wildcards):
     """
