@@ -15,7 +15,8 @@ rule get_breakpoints:
         sample=config['sample'],
         program=srcdir('../scripts/createivf_breakpoints.py'),
         cytobands=get_cytobands,
-        metadata=get_metadata
+        metadata=get_metadata,
+        bp_prefix=get_breakpoint_prefix
     shell:
-        "python {params.program} --sample {params.sample} --metadata {params.metadata} --cytobands {params.cytobands} --bam {input.bam} --outprefix '{params.sample}/bp'"
+        "python {params.program} --sample {params.sample} --metadata {params.metadata} --cytobands {params.cytobands} --bam {input.bam} --outprefix '{params.bp_prefix}'"
 
