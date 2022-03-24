@@ -30,7 +30,7 @@ def main():
     with open(args.file, 'r') as ifh:
         reader = csv.DictReader(ifh, delimiter='\t', fieldnames=fieldnames)
         for line in reader:
-            chr_cyto = ''.join(['chr', line['band']])
+            chr_cyto = ''.join(line['chrom'], line['band']])
             print('\t'.join([
                 line['chrom'],
                 line['start'],
