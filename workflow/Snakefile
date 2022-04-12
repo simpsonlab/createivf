@@ -3,13 +3,15 @@ include: "rules/basecall.smk"
 include: "rules/align.smk"
 include: "rules/stats.smk"
 include: "rules/breakpoint.smk"
+include: "rules/coverage.smk"
 
 rule all:
     input:
         get_basecall_output,
         expand("{analysis_root}/{sample}/merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample']),
         expand("{analysis_root}/{sample}/basecalling/{run_name}_read_stats.tsv", analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name']),
-        get_breakpoint_reads
+        get_breakpoint_reads,
+        get_concatenated_coverage_file
 
 rule all_basecall:
     input: get_basecall_output
@@ -32,3 +34,6 @@ rule all_stats:
     input:
         expand("{analysis_root}/{sample}/basecalling/{run_name}_read_stats.tsv", analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
 
+rule all_coverage:
+    input:
+        get_concatenated_coverage_file
