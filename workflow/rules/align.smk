@@ -9,7 +9,7 @@ rule merge_index_fastq_files:
     input:
         get_run_fastq_files
     output:
-        expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
+        expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq.gz', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
     params:
         program="cat"
     shell:
@@ -17,7 +17,7 @@ rule merge_index_fastq_files:
 
 rule map_sample_run_fastq_file:
     input:
-        fastq_files=expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name']),
+        fastq_files=expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq.gz', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name']),
         ref=get_reference
     output:
         expand("{analysis_root}/{sample}/mapped-pipeline/{run_name}.minimap.sorted.bam", analysis_root=config['analysis_root'], run_name=config['run_name'], sample=config['sample'])

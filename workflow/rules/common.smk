@@ -124,7 +124,7 @@ def get_sample_fastq(wildcards):
     Return the full path and filename for the merged FASTQ file for a given sample
     from a run
     """
-    sample_fastq_file = '.'.join([config['sample'], 'fastq'])
+    sample_fastq_file = '.'.join([config['sample'], 'fastq.gz'])
     sample_fastq_path = '/'.join([config['analysis_root'], config['sample'], config['run_name'], sample_fastq_file])
     return sample_fastq_path
 
