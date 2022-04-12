@@ -1,8 +1,9 @@
 ---
 name: createivf
 channels:
-    - conda-forge
+    - anaconda
     - bioconda
+    - conda-forge
     - defaults
 dependencies:
     - python=3.9
@@ -10,4 +11,8 @@ dependencies:
     - minimap2
     - pysam
     - samtools
+    - zlib
+    - pip:
+        - NanoPlot
+        - pybedtools
 
