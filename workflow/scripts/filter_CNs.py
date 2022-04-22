@@ -24,11 +24,9 @@ def init_args():
     parser = argparse.ArgumentParser(description=description)
     # define input BED files
     parser.add_argument('-depth', '--coverage-depth', type=str, required=False,
-            help='samtools depth output')
+            help='output from coverage_by_window.py')
     parser.add_argument('-gaps', '--genome-gaps', type=str, required=True,
             help='full path to the gaps BED file')
-    parser.add_argument('-cent', '--centromeres', type=str, required=True,
-            help='full path to the centromeres BED file')
     # define output BED files
     parser.add_argument('-cnv_out', '--copy-number-variant-output', type=str, required=False,
             help='name of the copy number output file to write data to')
@@ -48,8 +46,10 @@ def init_args():
     return parser.parse_args()
 
 
-# define a function to add the copy number to the end of the BED file
 def process_cnv(feature):
+    """
+    Define a function to add the copy number to the end of the BED file
+    """
     # get the copy number information
     coverage = float(feature[3])
     copy_number = (coverage / args.mean_coverage) * args.ploidy
@@ -87,11 +87,6 @@ if os.path.exists(args.genome_gaps):
     in_gaps = BedTool(args.genome_gaps)
 else:
     print(f'Gap file {args.genome_gaps} does not exist, exiting...\n')
-    sys.exit(1)
-if os.path.exists(args.centromeres):
-    in_centromeres = BedTool(args.centromeres)
-else:
-    print(f'Centromere file {args.centromeres} does not exist, exiting...\n')
     sys.exit(1)
 
 
