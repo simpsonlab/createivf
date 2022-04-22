@@ -57,6 +57,45 @@ def get_bed_option(wildcards):
     else:
         return ""
 
+def get_gaps_file(wildcards):
+    """
+    Return a BED file containing gaps from the config
+    """
+    if os.path.isfile(config['gaps']):
+        return config['gaps']
+    else:
+        print(f'Missing gaps file')
+        sys.exit(1)
+
+def get_size_file(wildcards):
+    """
+    Return the chromosome sizes file from the config
+    """
+    if os.path.isfile(config['size']):
+        return config['size']
+    else:
+        print(f'Missing size file')
+        sys.exit(1)
+
+def get_coverage(sample_name):
+    """
+    Get the genome coverage from the NanoStats.txt file
+    """
+    file_name = str(sample_name) + "/coverage/nanoplot/" + str(sample_name) + "NanoStats.txt"
+    if os.path.exists(file_name):
+        f = open(file_name)
+        pattern = "Total bases"
+        for line in f:
+            if re.search(pattern, line):
+                total_bases = line.split(":")[1].strip().replace(',', '')
+                return float(total_bases)/3100000000
+
+def get_copy_number_bed(wildcards):
+    """
+    Return the copy number variant BED file
+    """
+    return f'{get_sample()}/{get_sample()}.CNVs.bed'
+
 #
 # rules for coverage analysis
 #
@@ -105,3 +144,17 @@ rule concatenate_coverage_files:
     shell:
         '{params.program} {input.coverage_files} > {output}'
 
+rule get_genome_copy_number:
+    input:
+        stats='{sample}/coverage/nanoplot/{sample}NanoStats.txt',
+        depth='{sample}/coverage/{sample}.depth.txt.gz'
+    output:
+        "{sample}/{sample}.CNVs.bed"
+    params:
+        program=srcdir('../scripts/filter_CNs.py'),
+        gaps=get_gaps_file,
+        size=get_size_file,
+        cov=lambda wildcards: get_coverage(wildcards.sample)
+    shell:
+        'python {params.program} -depth {input.depth} -gaps {params.gaps} -cnv_out {output} -size {params.size} -cov {params.cov}'
+        
