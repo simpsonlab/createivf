@@ -3,6 +3,7 @@ import sys
 import csv
 import argparse
 import re
+import gzip
 
 def init_args():
     """
@@ -44,8 +45,8 @@ def main():
     Main program
     """
     args = init_args()
-    in_fh = open(args.input, 'r')
-    out_fh = open(args.output, 'w')
+    in_fh = gzip.open(args.input, 'rt')
+    out_fh = gzip.open(args.output, 'wt')
     
     csv_reader = csv.DictReader(in_fh, fieldnames=['chromosome', 'locus', 'depth'], delimiter='\t')
     
