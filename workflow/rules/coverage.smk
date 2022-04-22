@@ -39,14 +39,23 @@ def get_coverage_by_window_files(wildcards):
     coverage_files = list()
     chromosomes = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
     for chrom in chromosomes:
-        coverage_files.append(f'{get_sample()}/coverage/{get_sample()}.{chrom}.coverage.txt')
+        coverage_files.append(f'{get_sample()}/coverage/{get_sample()}.{chrom}.coverage.txt.gz')
     return coverage_files
 
 def get_concatenated_coverage_file(wildcards):
     """
     Return the concatenated coverage file
     """
-    return f'{get_sample()}/coverage/{get_sample()}.depth.txt'
+    return f'{get_sample()}/coverage/{get_sample()}.depth.txt.gz'
+
+def get_bed_option(wildcards):
+    """
+    Return a BED file which lists regions to include.
+    """
+    if os.path.isfile(config['bed']):
+        return f' -b {config["bed"]}'
+    else:
+        return ""
 
 #
 # rules for coverage analysis
@@ -68,18 +77,19 @@ rule run_samtools_depth:
     input:
         bam="{sample}/merged.sorted.bam"
     output:
-        "{sample}/coverage/{sample}.{chromosomes}.tsv"
+        "{sample}/coverage/{sample}.{chromosomes}.tsv.gz"
     params:
-        program='samtools depth'
+        program='samtools depth',
+        bed=get_bed_option
     shell:
-        "{params.program} -r {wildcards.chromosomes} -a {input.bam} > {output}"
+        "{params.program}  -r {wildcards.chromosomes} {params.bed} -a {input.bam} | gzip -c - > {output}"
 
 rule run_coverage_window:
     input:
-        depth='{sample}/coverage/{sample}.{chromosomes}.tsv',
+        depth='{sample}/coverage/{sample}.{chromosomes}.tsv.gz',
         stats='{sample}/coverage/nanoplot/{sample}NanoStats.txt'
     output:
-        protected('{sample}/coverage/{sample}.{chromosomes}.coverage.txt')
+        protected('{sample}/coverage/{sample}.{chromosomes}.coverage.txt.gz')
     params:
         program=srcdir('../scripts/coverage_by_window.py')
     shell:
@@ -89,7 +99,7 @@ rule concatenate_coverage_files:
     input:
         coverage_files=get_coverage_by_window_files
     output:
-        protected("{sample}/coverage/{sample}.depth.txt")
+        protected("{sample}/coverage/{sample}.depth.txt.gz")
     params:
         program='cat'
     shell:
