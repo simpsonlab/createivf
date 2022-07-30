@@ -1,4 +1,3 @@
----
 name: createivf
 channels:
     - conda-forge
