@@ -31,6 +31,8 @@ def init_args():
             help='reference length threshold (default: 1000)')
     parser.add_argument('--mapping_quality', required=False, default=1, type=int,
             help='mapping quality lower threshold (default: 1)')
+    parser.add_argument('--padding', required=False, default=0, type=int,
+            help='number of bases to pad at the end of the regions/bands of interest (default: 0)')
     return parser.parse_args()
 
 
@@ -225,7 +227,7 @@ def main():
     bp2_cyto = get_region_for_sample(sample=args.sample, bpid=2, target=target_dict)
     bp1_region = import_cytoband(file=args.cytobands, target=bp1_cyto)
     bp2_region = import_cytoband(file=args.cytobands, target=bp2_cyto)
-    print('Processing read 1 region')
+    print(f'Processing read 1 region: {bp1_region["chrom"]}:{bp1_region["start"]}-{bp1_region["end"]}')
     bp1_reads = get_reads_in_region(bam=args.bam,
             chrom=bp1_region['chrom'],
             start=bp1_region['start'],
@@ -233,7 +235,8 @@ def main():
             threshold=args.threshold,
             quality=args.mapping_quality)
     bp1_reads_list = create_sorted_reads(reads=bp1_reads)
-    print('Processing read 2 region\n')
+    #print(f'Processing read 2 region: {bp2_region}\n')
+    print(f'Processing read 2 region: {bp2_region["chrom"]}:{bp2_region["start"]}-{bp2_region["end"]}')
     bp2_reads = get_reads_in_region(bam=args.bam,
             chrom=bp2_region['chrom'],
             start=bp2_region['start'],
