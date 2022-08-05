@@ -14,5 +14,5 @@ rule get_fastq_stats:
     params:
         program=srcdir("../scripts/abyss-fac.pl")
     shell:
-        "cat {input} | grep -Ev '^$' | awk 'NR % 4 == 1 || NR % 4 == 2' | tr '@' '>' | {params.program} > {output}"
+        "zcat {input} | grep -Ev '^$' | awk 'NR % 4 == 1 || NR % 4 == 2' | tr '@' '>' | {params.program} > {output}"
 
