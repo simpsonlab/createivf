@@ -37,4 +37,3 @@ rule all_stats:
 rule all_coverage:
     input:
         get_copy_number_bed
-        #get_concatenated_coverage_file
