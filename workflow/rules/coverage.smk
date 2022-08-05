@@ -1,10 +1,16 @@
 import os
 import sys
 
-configfile: "config.yaml"
+#configfile: "config.yaml"
 
 # helper functions
 def get_sample():
+    """
+    Return the sample name from the config.yaml
+    """
+    return config['sample']
+
+def get_param_sample(wildcards):
     """
     Return the sample name from the config.yaml
     """
@@ -14,23 +20,30 @@ def get_merged_bam(wildcards):
     """
     Return the full path to the final merged BAM file for a sample
     """
-    return f'{get_sample()}/merged.sorted.bam'
+    return f'{get_analysis_root()}/{get_sample()}/{get_sample()}.merged.sorted.bam'
+
+def get_chromosomes():
+    """
+    Return a list of chromosomes to process
+    """
+    return ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
+
 
 def get_depth_files(wildcards):
     """
     Return a list of depth of coverage files
     """
-    chromosomes = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
+    chromosomes = get_chromosomes()
     depth_files = list()
     for chrom in chromosomes:
-        depth_files.append(f'{get_sample()}/coverage/{get_sample()}.{chrom}.tsv')
+        depth_files.append(f'{get_analysis_root()}/{get_sample()}/coverage/{get_sample()}.{chrom}.tsv.gz')
     return depth_files
 
 def get_nanoplot_stats(wildcards):
     """
     Return the NanoPlot stats file
     """
-    return f'{get_sample()}/coverage/nanoplot/{get_sample()}NanoStats.txt'
+    return f'{get_analysis_root()}/{get_sample()}/coverage/nanoplot/{get_sample()}NanoStats.txt'
 
 def get_coverage_by_window_files(wildcards):
     """
@@ -39,14 +52,14 @@ def get_coverage_by_window_files(wildcards):
     coverage_files = list()
     chromosomes = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
     for chrom in chromosomes:
-        coverage_files.append(f'{get_sample()}/coverage/{get_sample()}.{chrom}.coverage.txt.gz')
+        coverage_files.append(f'{get_analysis_root()}/{get_sample()}/coverage/{get_sample()}.{chrom}.coverage.txt.gz')
     return coverage_files
 
 def get_concatenated_coverage_file(wildcards):
     """
     Return the concatenated coverage file
     """
-    return f'{get_sample()}/coverage/{get_sample()}.depth.txt.gz'
+    return f'{get_analysis_root()}/{get_sample()}/coverage/{get_sample()}.depth.txt.gz'
 
 def get_bed_option(wildcards):
     """
@@ -81,7 +94,7 @@ def get_coverage(sample_name):
     """
     Get the genome coverage from the NanoStats.txt file
     """
-    file_name = str(sample_name) + "/coverage/nanoplot/" + str(sample_name) + "NanoStats.txt"
+    file_name = get_analysis_root() + '/' + str(sample_name) + "/coverage/nanoplot/" + str(sample_name) + "NanoStats.txt"
     if os.path.exists(file_name):
         f = open(file_name)
         pattern = "Total bases"
@@ -94,7 +107,7 @@ def get_copy_number_bed(wildcards):
     """
     Return the copy number variant BED file
     """
-    return f'{get_sample()}/{get_sample()}.CNVs.bed'
+    return f'{config["analysis_root"]}/{get_sample()}/{get_sample()}.CNVs.bed'
 
 #
 # rules for coverage analysis
@@ -102,21 +115,23 @@ def get_copy_number_bed(wildcards):
 
 rule run_nanoplot:
     input:
-        bam="{sample}/merged.sorted.bam"
+        bam=expand("{analysis_root}/{sample}/{sample}.merged.sorted.bam", analysis_root=config['analysis_root'], sample=config['sample'])
     output:
-        protected("{sample}/coverage/nanoplot/{sample}NanoPlot-report.html"),
-        protected("{sample}/coverage/nanoplot/{sample}NanoStats.txt")
+        protected(expand("{analysis_root}/{sample}/coverage/nanoplot/{sample}NanoPlot-report.html", analysis_root=config['analysis_root'], sample=config['sample'])),
+        protected(expand("{analysis_root}/{sample}/coverage/nanoplot/{sample}NanoStats.txt", analysis_root=config['analysis_root'], sample=config['sample']))
     params:
         program='NanoPlot',
-        outdir="{sample}/coverage/nanoplot"
+        outdir=expand("{analysis_root}/{sample}/coverage/nanoplot", analysis_root=config['analysis_root'], sample=config['sample']),
+        sample=get_param_sample
     shell:
-        "{params.program} -t 8 -p {wildcards.sample} --title {wildcards.sample} --bam {input.bam} -o {params.outdir}"
+        "{params.program} -t 8 -p {params.sample} --title {params.sample} --bam {input.bam} -o {params.outdir}"
 
 rule run_samtools_depth:
     input:
-        bam="{sample}/merged.sorted.bam"
+        bam=expand("{analysis_root}/{sample}/{sample}.merged.sorted.bam", analysis_root=config['analysis_root'], sample=config['sample']),
+        bai=expand("{analysis_root}/{sample}/{sample}.merged.sorted.bam.bai", analysis_root=config['analysis_root'], sample=config['sample'])
     output:
-        "{sample}/coverage/{sample}.{chromosomes}.tsv.gz"
+       "{analysis_root}/{sample}/coverage/{sample}.{chromosomes}.tsv.gz"
     params:
         program='samtools depth',
         bed=get_bed_option
@@ -125,10 +140,10 @@ rule run_samtools_depth:
 
 rule run_coverage_window:
     input:
-        depth='{sample}/coverage/{sample}.{chromosomes}.tsv.gz',
-        stats='{sample}/coverage/nanoplot/{sample}NanoStats.txt'
+        depth='{analysis_root}/{sample}/coverage/{sample}.{chromosomes}.tsv.gz',
+        stats=expand('{analysis_root}/{sample}/coverage/nanoplot/{sample}NanoStats.txt', analysis_root=config['analysis_root'], sample=config['sample'])
     output:
-        protected('{sample}/coverage/{sample}.{chromosomes}.coverage.txt.gz')
+        protected('{analysis_root}/{sample}/coverage/{sample}.{chromosomes}.coverage.txt.gz')
     params:
         program=srcdir('../scripts/coverage_by_window.py')
     shell:
@@ -138,7 +153,7 @@ rule concatenate_coverage_files:
     input:
         coverage_files=get_coverage_by_window_files
     output:
-        protected("{sample}/coverage/{sample}.depth.txt.gz")
+        protected(expand("{analysis_root}/{sample}/coverage/{sample}.depth.txt.gz", analysis_root=config['analysis_root'], sample=config['sample']))
     params:
         program='cat'
     shell:
@@ -146,10 +161,10 @@ rule concatenate_coverage_files:
 
 rule get_genome_copy_number:
     input:
-        stats='{sample}/coverage/nanoplot/{sample}NanoStats.txt',
-        depth='{sample}/coverage/{sample}.depth.txt.gz'
+        stats=expand('{analysis_root}/{sample}/coverage/nanoplot/{sample}NanoStats.txt', analysis_root=config['analysis_root'], sample=config['sample']),
+        depth=expand('{analysis_root}/{sample}/coverage/{sample}.depth.txt.gz', analysis_root=config['analysis_root'], sample=config['sample'])
     output:
-        "{sample}/{sample}.CNVs.bed"
+        '{analysis_root}/{sample}/{sample}.CNVs.bed'
     params:
         program=srcdir('../scripts/filter_CNs.py'),
         gaps=get_gaps_file,
@@ -157,4 +172,4 @@ rule get_genome_copy_number:
         cov=lambda wildcards: get_coverage(wildcards.sample)
     shell:
         'python {params.program} -depth {input.depth} -gaps {params.gaps} -cnv_out {output} -size {params.size} -cov {params.cov}'
-        
+
