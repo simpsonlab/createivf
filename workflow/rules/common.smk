@@ -177,3 +177,11 @@ def get_cytobands(wildcards):
     Return the cytobands file from the config.yaml
     """
     return config['cytobands']
+
+#def get_analysis_root(wildcards):
+def get_analysis_root():
+    """
+    Return the value for analysis_root from the config.yaml
+    """
+    return config['analysis_root']
+
