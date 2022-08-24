@@ -20,5 +20,5 @@ rule run_guppy_on_dir:
         chunks_per_runner=get_chunks_per_runner,
         device=get_gpu_device
     shell:
-        "{params.program} -c {params.config} -i {input} -s {params.save_path} --num_callers {params.num_callers} --gpu_runners_per_device {params.gpu_runners_per_device} --chunks_per_runner {params.chunks_per_runner} -x {params.device} --disable_pings --compress_fastq"
+        "{params.program} -c {params.config} --calib_detect -i {input} -s {params.save_path} --num_callers {params.num_callers} --gpu_runners_per_device {params.gpu_runners_per_device} --chunks_per_runner {params.chunks_per_runner} -x {params.device} --disable_pings --compress_fastq"
 
