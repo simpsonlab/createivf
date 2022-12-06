@@ -165,13 +165,13 @@ def is_read_reverse(read):
         return False
 
 
-def is_chimeric_read(read):
+def is_supplementary_read(read):
     """
     Uses the SAM Flag 2048 (0x800) to determine if the read
-    is a supplementary (i.e. chimeric) read.
+    is a supplementary (i.e. split/chimeric) read.
     """
-    chimeric_read_flag = 0x800
-    if read.flag & chimeric_read_flag:
+    supplementary_read_flag = 0x800
+    if read.flag & supplementary_read_flag:
         return True
     else:
         return False
@@ -188,6 +188,7 @@ def get_intersecting_reads(reads1, reads2):
     for read1 in reads1:
         if read1.query_name not in read1_dict:
             read1_strand = str()
+            read1_supplementary = is_supplementary_read(read1)
             if is_read_reverse(read1):
                 read1_strand = '-'
             else:
@@ -198,7 +199,8 @@ def get_intersecting_reads(reads1, reads2):
                  'end':     str(read1.reference_end),
                  'strand':  read1_strand,
                  'quality': str(read1.mapping_quality),
-                 'flag':    str(read1.flag)}})
+                 'flag':    str(read1.flag),
+                 'supplementary':   read1_supplementary}})
         else:
             continue
     for read2 in reads2:
@@ -214,7 +216,8 @@ def get_intersecting_reads(reads1, reads2):
                 read1_dict[read2.query_name]['end'],
                 read1_dict[read2.query_name]['strand'],
                 read1_dict[read2.query_name]['quality'],
-                read1_dict[read2.query_name]['flag']
+                read1_dict[read2.query_name]['flag'],
+                str(read1_dict[read2.query_name]['supplementary'])
                 ])
             tmp_read2 = '\t'.join([
                 read2.reference_name,
@@ -222,9 +225,11 @@ def get_intersecting_reads(reads1, reads2):
                 str(read2.reference_end),
                 read2_strand,
                 str(read2.mapping_quality),
-                str(read2.flag)
+                str(read2.flag),
+                str(is_supplementary_read(read2))
                 ])
-            intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2])
+            split_read = read1_dict[read2.query_name]['supplementary'] ^ is_supplementary_read(read2)
+            intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2, str(split_read)])
     return intersecting_reads
 
 
@@ -235,8 +240,9 @@ def print_intersecting_reads(file, reads):
     with open(file, 'w') as ofh:
         ofh.write('\t'.join([
             'read_id',
-            'chrA', 'startA', 'endA', 'strandA', 'qualityA', 'flagA',
-            'chrB', 'startB', 'endB', 'strandB', 'qualityB', 'flagB']))
+            'chrA', 'startA', 'endA', 'strandA', 'qualityA', 'flagA', 'supplementaryA',
+            'chrB', 'startB', 'endB', 'strandB', 'qualityB', 'flagB', 'supplementaryB',
+            'split_read']))
         ofh.write('\n')
         for read in reads:
             ofh.write('\t'.join(read))
