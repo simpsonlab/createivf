@@ -113,7 +113,7 @@ def get_reads_in_region(bam, chrom, start, end, threshold=1000, quality=1):
     region_reads = list()
     bamfile = pysam.AlignmentFile(bam, 'rb')
     for read in bamfile.fetch(chrom, start, end):
-        if read.reference_length > threshold and read.mapping_quality >= 1:
+        if read.reference_length > threshold and read.mapping_quality >= quality:
             region_reads.append(read)
     return region_reads
 
@@ -141,13 +141,17 @@ def create_sorted_reads(reads):
                               read.reference_name,
                               str(read.reference_start),
                               str(read.reference_end),
-                              '-'])
+                              '-',
+                              str(read.mapping_quality),
+                              str(read.flag)])
         else:
             read_list.append([read.query_name,
                               read.reference_name,
                               str(read.reference_start),
                               str(read.reference_end),
-                              '+'])
+                              '+',
+                              str(read.mapping_quality),
+                              str(read.flag)])
     return sorted(read_list, key=itemgetter(0, 1, 2))
 
 def is_read_reverse(read):
@@ -156,6 +160,18 @@ def is_read_reverse(read):
     """
     rev_strand_flag = 0x10
     if read.flag & rev_strand_flag:
+        return True
+    else:
+        return False
+
+
+def is_chimeric_read(read):
+    """
+    Uses the SAM Flag 2048 (0x800) to determine if the read
+    is a supplementary (i.e. chimeric) read.
+    """
+    chimeric_read_flag = 0x800
+    if read.flag & chimeric_read_flag:
         return True
     else:
         return False
@@ -177,10 +193,12 @@ def get_intersecting_reads(reads1, reads2):
             else:
                 read1_strand = '+'
             read1_dict.update({read1.query_name:
-                {'chrom':  read1.reference_name,
-                 'start':  str(read1.reference_start),
-                 'end':    str(read1.reference_end),
-                 'strand': read1_strand}})
+                {'chrom':   read1.reference_name,
+                 'start':   str(read1.reference_start),
+                 'end':     str(read1.reference_end),
+                 'strand':  read1_strand,
+                 'quality': str(read1.mapping_quality),
+                 'flag':    str(read1.flag)}})
         else:
             continue
     for read2 in reads2:
@@ -190,17 +208,21 @@ def get_intersecting_reads(reads1, reads2):
         else:
             read2_strand = '+'
         if read2.query_name in read1_dict:
-            tmp_read1 = ' '.join([
+            tmp_read1 = '\t'.join([
                 read1_dict[read2.query_name]['chrom'],
                 read1_dict[read2.query_name]['start'],
                 read1_dict[read2.query_name]['end'],
-                read1_dict[read2.query_name]['strand']
+                read1_dict[read2.query_name]['strand'],
+                read1_dict[read2.query_name]['quality'],
+                read1_dict[read2.query_name]['flag']
                 ])
-            tmp_read2 = ' '.join([
+            tmp_read2 = '\t'.join([
                 read2.reference_name,
                 str(read2.reference_start),
                 str(read2.reference_end),
-                read2_strand
+                read2_strand,
+                str(read2.mapping_quality),
+                str(read2.flag)
                 ])
             intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2])
     return intersecting_reads
@@ -211,6 +233,11 @@ def print_intersecting_reads(file, reads):
     Print reads that intersect breakpoint 1 and 2 to a file
     """
     with open(file, 'w') as ofh:
+        ofh.write('\t'.join([
+            'read_id',
+            'chrA', 'startA', 'endA', 'strandA', 'qualityA', 'flagA',
+            'chrB', 'startB', 'endB', 'strandB', 'qualityB', 'flagB']))
+        ofh.write('\n')
         for read in reads:
             ofh.write('\t'.join(read))
             ofh.write('\n')
@@ -260,7 +287,9 @@ def main():
     int_file = ''.join([args.outprefix, '.intersecting.reads'])
     print_intersecting_reads(file=int_file, reads=int_reads)
     if len(int_reads) <= 0:
-        print('No overlapping breakpoints detected...\n')
+        print('\nNo overlapping breakpoints detected...\n')
+    else:
+        print('\nIntersecting breakpoints found!\n')
     print('\nBreakpoint detection complete!\n')
     
 
