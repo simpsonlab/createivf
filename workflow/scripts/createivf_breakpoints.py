@@ -31,6 +31,8 @@ def init_args():
             help='reference length threshold (default: 1000)')
     parser.add_argument('--mapping_quality', required=False, default=1, type=int,
             help='mapping quality lower threshold (default: 1)')
+    parser.add_argument('--padding', required=False, default=0, type=int,
+            help='number of bases to pad at the end of the regions/bands of interest (default: 0)')
     return parser.parse_args()
 
 
@@ -106,12 +108,12 @@ def import_cytoband(file, target, delimiter='\t'):
 
 def get_reads_in_region(bam, chrom, start, end, threshold=1000, quality=1):
     """
-    Print
+    Return the reads from a BAM file in a given region.
     """
     region_reads = list()
     bamfile = pysam.AlignmentFile(bam, 'rb')
     for read in bamfile.fetch(chrom, start, end):
-        if read.reference_length > threshold and read.mapping_quality >= 1:
+        if read.reference_length > threshold and read.mapping_quality >= quality:
             region_reads.append(read)
     return region_reads
 
@@ -134,11 +136,45 @@ def create_sorted_reads(reads):
     readids = list()
     read_list = list()
     for read in reads:
-        read_list.append([read.query_name,
-                          read.reference_name,
-                          str(read.reference_start),
-                          str(read.reference_end)])
-    return sorted(read_list, key=itemgetter(0))
+        if is_read_reverse(read=read):
+            read_list.append([read.query_name,
+                              read.reference_name,
+                              str(read.reference_start),
+                              str(read.reference_end),
+                              '-',
+                              str(read.mapping_quality),
+                              str(read.flag)])
+        else:
+            read_list.append([read.query_name,
+                              read.reference_name,
+                              str(read.reference_start),
+                              str(read.reference_end),
+                              '+',
+                              str(read.mapping_quality),
+                              str(read.flag)])
+    return sorted(read_list, key=itemgetter(0, 1, 2))
+
+def is_read_reverse(read):
+    """
+    Return the orientation of the read from the SAM flag.
+    """
+    rev_strand_flag = 0x10
+    if read.flag & rev_strand_flag:
+        return True
+    else:
+        return False
+
+
+def is_supplementary_read(read):
+    """
+    Uses the SAM Flag 2048 (0x800) to determine if the read
+    is a supplementary (i.e. split/chimeric) read.
+    """
+    supplementary_read_flag = 0x800
+    if read.flag & supplementary_read_flag:
+        return True
+    else:
+        return False
 
 
 def get_intersecting_reads(reads1, reads2):
@@ -151,25 +187,49 @@ def get_intersecting_reads(reads1, reads2):
     intersecting_reads = list()
     for read1 in reads1:
         if read1.query_name not in read1_dict:
+            read1_strand = str()
+            read1_supplementary = is_supplementary_read(read1)
+            if is_read_reverse(read1):
+                read1_strand = '-'
+            else:
+                read1_strand = '+'
             read1_dict.update({read1.query_name:
-                {'chrom': read1.reference_name,
-                 'start': str(read1.reference_start),
-                 'end': str(read1.reference_end)}})
+                {'chrom':   read1.reference_name,
+                 'start':   str(read1.reference_start),
+                 'end':     str(read1.reference_end),
+                 'strand':  read1_strand,
+                 'quality': str(read1.mapping_quality),
+                 'flag':    str(read1.flag),
+                 'supplementary':   read1_supplementary}})
         else:
             continue
     for read2 in reads2:
+        read2_strand = str()
+        if is_read_reverse(read=read2):
+            read2_strand = '-'
+        else:
+            read2_strand = '+'
         if read2.query_name in read1_dict:
-            tmp_read1 = ' '.join([
+            tmp_read1 = '\t'.join([
                 read1_dict[read2.query_name]['chrom'],
                 read1_dict[read2.query_name]['start'],
-                read1_dict[read2.query_name]['end']
+                read1_dict[read2.query_name]['end'],
+                read1_dict[read2.query_name]['strand'],
+                read1_dict[read2.query_name]['quality'],
+                read1_dict[read2.query_name]['flag'],
+                str(read1_dict[read2.query_name]['supplementary'])
                 ])
-            tmp_read2 = ' '.join([
+            tmp_read2 = '\t'.join([
                 read2.reference_name,
                 str(read2.reference_start),
-                str(read2.reference_end)
+                str(read2.reference_end),
+                read2_strand,
+                str(read2.mapping_quality),
+                str(read2.flag),
+                str(is_supplementary_read(read2))
                 ])
-            intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2])
+            split_read = read1_dict[read2.query_name]['supplementary'] ^ is_supplementary_read(read2)
+            intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2, str(split_read)])
     return intersecting_reads
 
 
@@ -177,7 +237,13 @@ def print_intersecting_reads(file, reads):
     """
     Print reads that intersect breakpoint 1 and 2 to a file
     """
-    with open(outfile, 'w') as ofh:
+    with open(file, 'w') as ofh:
+        ofh.write('\t'.join([
+            'read_id',
+            'chrA', 'startA', 'endA', 'strandA', 'qualityA', 'flagA', 'supplementaryA',
+            'chrB', 'startB', 'endB', 'strandB', 'qualityB', 'flagB', 'supplementaryB',
+            'split_read']))
+        ofh.write('\n')
         for read in reads:
             ofh.write('\t'.join(read))
             ofh.write('\n')
@@ -194,7 +260,7 @@ def main():
     bp2_cyto = get_region_for_sample(sample=args.sample, bpid=2, target=target_dict)
     bp1_region = import_cytoband(file=args.cytobands, target=bp1_cyto)
     bp2_region = import_cytoband(file=args.cytobands, target=bp2_cyto)
-    print('Processing read 1 region')
+    print(f'Processing read 1 region: {bp1_region["chrom"]}:{bp1_region["start"]}-{bp1_region["end"]}')
     bp1_reads = get_reads_in_region(bam=args.bam,
             chrom=bp1_region['chrom'],
             start=bp1_region['start'],
@@ -202,7 +268,8 @@ def main():
             threshold=args.threshold,
             quality=args.mapping_quality)
     bp1_reads_list = create_sorted_reads(reads=bp1_reads)
-    print('Processing read 2 region\n')
+    #print(f'Processing read 2 region: {bp2_region}\n')
+    print(f'Processing read 2 region: {bp2_region["chrom"]}:{bp2_region["start"]}-{bp2_region["end"]}')
     bp2_reads = get_reads_in_region(bam=args.bam,
             chrom=bp2_region['chrom'],
             start=bp2_region['start'],
@@ -224,11 +291,12 @@ def main():
 
     print(f'Detecting intersecting breakpoint reads...')
     int_file = ''.join([args.outprefix, '.intersecting.reads'])
-    if len(int_reads) > 0:
-        print_intersecting_reads(file=int_file, reads=int_reads)
+    print_intersecting_reads(file=int_file, reads=int_reads)
+    if len(int_reads) <= 0:
+        print('\nNo overlapping breakpoints detected...\n')
     else:
-        print('No overlapping breakpoints detected...\n')
-    print('Breakpoint detection complete!\n')
+        print('\nIntersecting breakpoints found!\n')
+    print('\nBreakpoint detection complete!\n')
     
 
 if __name__ == '__main__':
