@@ -59,7 +59,6 @@ def import_metadata(file, delimiter='\t'):
             else:
                 print(f'{line["sample"]} found in dictionary, skipping...')
                 continue
-            #(sampleid, region1, region2) = line.rstrip().split()
     return target
 
 
@@ -103,7 +102,6 @@ def import_cytoband(file, target, delimiter='\t'):
     end = bp_coords[-1]
     region = {"chrom" : chrom, "start": start, "end": end}
     return region
-    #return f'{chrom}:{start}-{end}'
 
 
 def get_reads_in_region(bam, chrom, start, end, threshold=1000, quality=1):
@@ -143,7 +141,8 @@ def create_sorted_reads(reads):
                               str(read.reference_end),
                               '-',
                               str(read.mapping_quality),
-                              str(read.flag)])
+                              str(read.flag),
+                              str(read.infer_read_length())])
         else:
             read_list.append([read.query_name,
                               read.reference_name,
@@ -151,7 +150,8 @@ def create_sorted_reads(reads):
                               str(read.reference_end),
                               '+',
                               str(read.mapping_quality),
-                              str(read.flag)])
+                              str(read.flag),
+                              str(read.infer_read_length())])
     return sorted(read_list, key=itemgetter(0, 1, 2))
 
 def is_read_reverse(read):
@@ -200,7 +200,8 @@ def get_intersecting_reads(reads1, reads2):
                  'strand':  read1_strand,
                  'quality': str(read1.mapping_quality),
                  'flag':    str(read1.flag),
-                 'supplementary':   read1_supplementary}})
+                 'supplementary':   read1_supplementary,
+                 'read_length': str(read1.infer_read_length())}})
         else:
             continue
     for read2 in reads2:
@@ -217,7 +218,8 @@ def get_intersecting_reads(reads1, reads2):
                 read1_dict[read2.query_name]['strand'],
                 read1_dict[read2.query_name]['quality'],
                 read1_dict[read2.query_name]['flag'],
-                str(read1_dict[read2.query_name]['supplementary'])
+                str(read1_dict[read2.query_name]['supplementary']),
+                str(read1_dict[read2.query_name]['read_length'])
                 ])
             tmp_read2 = '\t'.join([
                 read2.reference_name,
@@ -226,7 +228,8 @@ def get_intersecting_reads(reads1, reads2):
                 read2_strand,
                 str(read2.mapping_quality),
                 str(read2.flag),
-                str(is_supplementary_read(read2))
+                str(is_supplementary_read(read2)),
+                str(read2.infer_read_length())
                 ])
             split_read = read1_dict[read2.query_name]['supplementary'] ^ is_supplementary_read(read2)
             intersecting_reads.append([read2.query_name, tmp_read1, tmp_read2, str(split_read)])
@@ -240,8 +243,8 @@ def print_intersecting_reads(file, reads):
     with open(file, 'w') as ofh:
         ofh.write('\t'.join([
             'read_id',
-            'chrA', 'startA', 'endA', 'strandA', 'qualityA', 'flagA', 'supplementaryA',
-            'chrB', 'startB', 'endB', 'strandB', 'qualityB', 'flagB', 'supplementaryB',
+            'chrA', 'startA', 'endA', 'strandA', 'qualityA', 'flagA', 'supplementaryA', 'read_lengthA',
+            'chrB', 'startB', 'endB', 'strandB', 'qualityB', 'flagB', 'supplementaryB', 'read_lengthB',
             'split_read']))
         ofh.write('\n')
         for read in reads:
