@@ -9,7 +9,7 @@ rule merge_index_fastq_files:
     input:
         get_run_fastq_files
     output:
-        expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
+        expand('{analysis_root}/{sample}/basecalling/{run_name}.fastq.gz', analysis_root=config['analysis_root'], sample=config['sample'], run_name=config['run_name'])
     params:
         program="cat"
     shell:
