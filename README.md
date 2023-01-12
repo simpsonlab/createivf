@@ -74,7 +74,7 @@ additional column.
 ### Run the workflow
 The basecaller uses `guppy` and a GPU to convert FAST5 files to FASTQ files.
 ```
-snakemake -s /path/to/createivf/workflow/Snakefile --cores 1 all_basecall
+snakemake --configfile config.yaml -s /path/to/createivf/workflow/Snakefile --cores 1 all_basecall
 ```
 
 Once basecalling has completed, the remainder of the pipeline can
@@ -82,7 +82,7 @@ be executed on a standard server.  Individual runs can be executed
 using the following to generate BAM files for each run for a given
 sample:
 ```
-snakemake -s /path/to/createivf/workflow/Snakefile --cores 8 all_map
+snakemake --configfile config.yaml -s /path/to/createivf/workflow/Snakefile --cores 8 all_map
 ```
 Once alignment has completed, the `all_breakpoint` rule will execute
 the merging of individual runs per sample into a single sample
@@ -93,11 +93,18 @@ snakemake -s /path/to/createivf/workflow/Snakefile --cores 8 all_breakpoint
 This will merge each run BAM file for a given sample into a single sample
 BAM file and breakpoint read information:
 ```
-sample/merged.sorted.bam
-sample/bp1.reads
-sample/bp2.reads
+/{analysis_root}/{sample}/merged.sorted.bam
+/{analysis_root}/{sample}/{sample}.bp1.reads
+/{analysis_root}/{sample}/{sample}.bp2.reads
+/{analysis_root}/{sample}/{sample}.bp.intersecting.reads
 ```
-
+By default, breakpoint detection requires a minimum `mapping_quality` of 1.  To modify this,
+the value can be changed inside the `config.yaml` file by appending the following:
+```
+mapping_quality: 10
+```
+In this case, we are overwriting the `mapping_quality` parameter to a minimum
+value of 10.
 
 ## Credits and Acknowledgements
 The script (`abyss-fac.pl`) to generate read stats was obtained from:
