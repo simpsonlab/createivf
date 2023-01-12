@@ -150,13 +150,13 @@ def get_merged_sample_bam_file(wildcards):
 
 def get_breakpoint_reads(wildcards):
     """
-    Return a list containing the reads breakpoint files (i.e. bp1.reads, bp2.reads)
+    Return a list containing the reads breakpoint files (i.e. {sample}.bp1.reads, {sample}.bp2.reads)
     """
     bp_files = list()
     bp_ids = ["1", "2"]
     for id in bp_ids:
-        bp_fn = f"bp{id}.reads"
-        bp_files.append('/'.join([config['sample'], bp_fn]))
+        bp_fn = f"{config['sample']}.bp{id}.reads"
+        bp_files.append('/'.join([config['analysis_root'], config['sample'], bp_fn]))
     return bp_files
 
 def get_metadata(wildcards):
