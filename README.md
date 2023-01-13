@@ -52,6 +52,14 @@ metadata: "/path/to/sample_cytogenetics.tsv"
 cytobands: "/path/to/hg38.cytoBand.composite.txt"
 ```
 
+By default, breakpoint detection requires a minimum `mapping_quality` of 1.  To modify this,
+the value can be changed inside the `config.yaml` file by appending the following:
+```
+mapping_quality: 10
+```
+In this case, we are overwriting the `mapping_quality` parameter to a minimum
+value of 10.
+
 The `guppy_basecaller` is not available as part of the `conda` package
 and must be installed separately.  The following parameters are
 set for the GPU version of `guppy`:
@@ -98,13 +106,6 @@ BAM file and breakpoint read information:
 /{analysis_root}/{sample}/{sample}.bp2.reads
 /{analysis_root}/{sample}/{sample}.bp.intersecting.reads
 ```
-By default, breakpoint detection requires a minimum `mapping_quality` of 1.  To modify this,
-the value can be changed inside the `config.yaml` file by appending the following:
-```
-mapping_quality: 10
-```
-In this case, we are overwriting the `mapping_quality` parameter to a minimum
-value of 10.
 
 ## Credits and Acknowledgements
 The script (`abyss-fac.pl`) to generate read stats was obtained from:
